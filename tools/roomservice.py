@@ -183,11 +183,15 @@ def is_in_manifest(projectpath):
 
 def add_to_manifest(repositories):
     for repository in repositories:
-        if 'dep_type' in repository:
-            print('dep_type is depreciated, please update your ev.dependencies config')
-
         repo_name = repository['repository']
-        dep_type = repo_name.split('_')[1]
+
+        aosp = False
+        if ("/" in repo_name):
+            aosp = True
+            dep_type = repo_name.split('/')[0]
+        else:
+            dep_type = repo_name.split('_')[1]
+
         dep_manifest = os.path.join(local_manifests_dir, "%s" % dep_type + ".xml")
         try:
             lm = ElementTree.parse(dep_manifest)
@@ -202,8 +206,17 @@ def add_to_manifest(repositories):
 
         print('Adding dependency: %s -> %s' % (repo_name, repo_target))
         project = ElementTree.Element("project", attrib = {
-            "path": repo_target, "name": "%s" % repo_name, "remote": "evervolv"
+            "path": repo_target, "name": "%s" % repo_name
             })
+
+        # Available remotes are defined in the manifest
+        if aosp:
+            print("Using default remote for %s" % repo_name)
+        else:
+            if 'remote' in repository:
+                project.set('remote',repository['remote'])
+            else:
+                project.set('remote',"evervolv")
 
         if 'branch' in repository:
             project.set('revision',repository['branch'])
