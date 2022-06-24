@@ -20,5 +20,13 @@ include $(SRC_EVERVOLV_DIR)/build/target/product/evervolv.mk
 PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS := relaxed
 
 # Overrides
+<<<<<<< HEAD:target/product/ev_sdk_phone_x86_64.mk
 PRODUCT_NAME := ev_sdk_phone_x86_64
 PRODUCT_MODEL := Evervolv Android SDK built for x86_64
+=======
+PRODUCT_NAME := lineage_sdk_phone_x86_64
+PRODUCT_MODEL := LineageOS Android SDK built for x86_64
+
+PRODUCT_SDK_ADDON_NAME := lineage
+PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := $(LOCAL_PATH)/source.properties
+>>>>>>> 68544f936 (lineage: products: Un-break SDK addon):build/target/product/lineage_sdk_phone_x86_64.mk

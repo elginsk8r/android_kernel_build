@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+<<<<<<< HEAD:target/product/ev_gsi_arm.mk
 $(call inherit-product, device/generic/common/gsi_arm.mk)
+=======
+$(call inherit-product, build/target/product/gsi_release.mk)
+$(call inherit-product, device/google/atv/products/aosp_tv_arm64.mk)
+>>>>>>> 68544f936 (lineage: products: Un-break SDK addon):build/target/product/lineage_gsi_tv_arm64.mk
 
 include $(SRC_EVERVOLV_DIR)/build/target/product/evervolv.mk
 
