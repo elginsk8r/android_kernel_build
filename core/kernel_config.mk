@@ -58,6 +58,7 @@ endif
 
 KERNEL_VERSION := $(shell grep "^VERSION = " $(TARGET_KERNEL_SOURCE)/Makefile | awk '{ print $$3 }')
 KERNEL_PATCHLEVEL := $(shell grep "^PATCHLEVEL = " $(TARGET_KERNEL_SOURCE)/Makefile | awk '{ print $$3 }')
+KERNEL_SUBLEVEL := $(shell grep "^SUBLEVEL = " $(TARGET_KERNEL_SOURCE)/Makefile | awk '{ print $$3 }')
 TARGET_KERNEL_VERSION ?= $(shell echo $(KERNEL_VERSION)"."$(KERNEL_PATCHLEVEL))
 
 CLANG_PREBUILTS := $(BUILD_TOP)/prebuilts/clang/host/$(HOST_PREBUILT_TAG)/clang-r416183b
@@ -162,7 +163,10 @@ KERNEL_MAKE_FLAGS += HOSTCXX=$(CLANG_PREBUILTS)/bin/clang++
 # Use LLVM's substitutes for GNU binutils if compatible kernel version.
 ifneq ($(TARGET_KERNEL_CLANG_COMPILE), false)
 ifneq (,$(filter 5.4, $(TARGET_KERNEL_VERSION)))
-    KERNEL_MAKE_FLAGS += LLVM=1 LLVM_IAS=1
+    KERNEL_MAKE_FLAGS += LLVM=1
+    ifneq ($(call math_gt_or_eq,$(KERNEL_SUBLEVEL),86),)
+        KERNEL_MAKE_FLAGS += LLVM_IAS=1
+    endif
 endif
 endif
 
