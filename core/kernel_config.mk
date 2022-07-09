@@ -164,7 +164,7 @@ KERNEL_MAKE_FLAGS += HOSTCXX=$(CLANG_PREBUILTS)/bin/clang++
 ifneq ($(TARGET_KERNEL_CLANG_COMPILE), false)
 ifneq (,$(filter 5.4, $(TARGET_KERNEL_VERSION)))
     KERNEL_MAKE_FLAGS += LLVM=1
-    ifneq ($(call math_gt_or_eq,$(KERNEL_SUBLEVEL),86),)
+    ifneq ($(call math_gt_or_eq,$(KERNEL_SUBLEVEL),76),)
         KERNEL_MAKE_FLAGS += LLVM_IAS=1
     endif
 endif
