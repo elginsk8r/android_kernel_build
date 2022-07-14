@@ -50,6 +50,8 @@
 #
 #   BOARD_KERNEL_LZ4_COMP_FLAGS        = Compression flags for KERNEL_IMAGE_NAME outside of the kernel build
 #
+#   BOARD_DTB_CFG                      = Path to a mkdtboimg.py config file for dtb.img
+#
 #   BOARD_DTBO_CFG                     = Path to a mkdtboimg.py config file
 #
 #   BOARD_CUSTOM_DTBOIMG_MK            = Path to a custom dtboimage makefile
@@ -460,20 +462,20 @@ alldefconfig: $(KERNEL_OUT)
 	env KCONFIG_NOTIMESTAMP=true \
 		 $(call make-kernel-target,alldefconfig)
 
-ifeq (true,$(filter true, $(TARGET_NEEDS_DTBOIMAGE) $(BOARD_KERNEL_SEPARATED_DTBO)))
-ifneq ($(BOARD_CUSTOM_DTBOIMG_MK),)
-include $(BOARD_CUSTOM_DTBOIMG_MK)
-else
 MKDTIMG := $(HOST_OUT_EXECUTABLES)/mkdtimg$(HOST_EXECUTABLE_SUFFIX)
 MKDTBOIMG := $(HOST_OUT_EXECUTABLES)/mkdtboimg.py
-
-$(DTBO_OUT):
-	mkdir -p $(DTBO_OUT)
 
 MKDTBOIMG_FLAGS :=
 ifneq ($(BOARD_KERNEL_PAGESIZE),)
 MKDTBOIMG_FLAGS += --page_size=$(BOARD_KERNEL_PAGESIZE)
 endif
+
+ifeq (true,$(filter true, $(TARGET_NEEDS_DTBOIMAGE) $(BOARD_KERNEL_SEPARATED_DTBO)))
+ifneq ($(BOARD_CUSTOM_DTBOIMG_MK),)
+include $(BOARD_CUSTOM_DTBOIMG_MK)
+else
+$(DTBO_OUT):
+	mkdir -p $(DTBO_OUT)
 
 ifneq ($(TARGET_KERNEL_DTBO_FILES),)
 KERNEL_DTBO_FILES := 
@@ -512,12 +514,16 @@ $(foreach dtb,$(TARGET_KERNEL_DTB_FILES), \
 endif # TARGET_KERNEL_DTB_FILES
 KERNEL_DTB_FILES ?= $(shell find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | sort)
 
-$(INSTALLED_DTBIMAGE_TARGET): $(DTC) $(DTB_OUT)
+$(INSTALLED_DTBIMAGE_TARGET): $(DTC) $(DTB_OUT) $(MKDTBOIMG)
 	@echo "Building dtb.img"
 	$(hide) find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | xargs rm -f
 	$(call make-kernel-config,$(DTB_OUT),$(KERNEL_DEFCONFIG))
 	$(call make-dtb-target,$(TARGET_KERNEL_DTB))
+ifdef BOARD_DTB_CFG
+	$(MKDTBOIMG) cfg_create $@ $(BOARD_DTB_CFG) -d $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts
+else
 	cat $(KERNEL_DTB_FILES) > $@
+endif # BOARD_DTB_CFG
 	$(hide) touch -c $(DTB_OUT)
 endif # !BOARD_PREBUILT_DTBIMAGE_DIR
 endif # BOARD_INCLUDE_DTB_IN_BOOTIMG
