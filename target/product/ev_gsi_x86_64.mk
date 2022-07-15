@@ -14,17 +14,10 @@
 
 $(call inherit-product, device/generic/common/gsi_x86_64.mk)
 
-include $(SRC_EVERVOLV_DIR)/build/target/product/evervolv.mk
+include $(SRC_EVERVOLV_DIR)/build/target/product/ev_generic_target.mk
 
 PRODUCT_USE_DYNAMIC_PARTITION_SIZE := true
 
-<<<<<<< HEAD:target/product/ev_gsi_x86_64.mk
 TARGET_NO_KERNEL_OVERRIDE := true
 
 PRODUCT_NAME := ev_gsi_x86_64
-=======
-PRODUCT_NAME := lineage_sdk_car_x86_64
-
-PRODUCT_SDK_ADDON_NAME := lineage
-PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := $(LOCAL_PATH)/source.properties
->>>>>>> 68544f936 (lineage: products: Un-break SDK addon):build/target/product/lineage_sdk_car_x86_64.mk
