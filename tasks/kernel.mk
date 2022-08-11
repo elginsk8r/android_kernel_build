@@ -44,6 +44,12 @@
 #                                          For example, for ARM devices,
 #                                          use zImage-dtb instead of zImage.
 #
+#   KERNEL_IMAGE_NAME                  = Optional, built uncompressed image name, typically Image.
+#                                          defaults to BOARD_KERNEL_IMAGE_NAME is undefined
+#                                          or BOARD_KERNEL_LZ4_COMPRESSION is not true
+#
+#   BOARD_KERNEL_LZ4_COMP_FLAGS        = Compression flags for KERNEL_IMAGE_NAME outside of the kernel build
+#
 #   BOARD_DTBO_CFG                     = Path to a mkdtboimg.py config file
 #
 #   BOARD_CUSTOM_DTBOIMG_MK            = Path to a custom dtboimage makefile
@@ -106,8 +112,16 @@ BASE_RECOVERY_KERNEL_DEFCONFIG_SRC := $(word 1, $(ALL_RECOVERY_KERNEL_DEFCONFIG_
 ifeq ($(BOARD_KERNEL_IMAGE_NAME),)
 $(error BOARD_KERNEL_IMAGE_NAME not defined.)
 endif
-TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(BOARD_KERNEL_IMAGE_NAME)
 
+ifneq ($(filter Image.lz4,$(BOARD_KERNEL_IMAGE_NAME)),)
+ifeq ($(BOARD_KERNEL_LZ4_COMPRESSION),true)
+    KERNEL_IMAGE_NAME := Image
+    BOARD_KERNEL_LZ4_COMP_FLAGS ?= -l -f -12 --favor-decSpeed
+endif
+endif
+KERNEL_IMAGE_NAME ?= $(BOARD_KERNEL_IMAGE_NAME)
+
+TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(BOARD_KERNEL_IMAGE_NAME)
 TARGET_PREBUILT_INT_RECOVERY_KERNEL := $(RECOVERY_KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(BOARD_KERNEL_IMAGE_NAME)
 
 ifeq "$(wildcard $(KERNEL_SRC) )" ""
@@ -390,9 +404,9 @@ $(KERNEL_CONFIG): $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
 	@echo "Building Kernel Config"
 	$(call make-kernel-config,$(KERNEL_OUT),$(KERNEL_DEFCONFIG))
 
-$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC)
-	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
-	$(call make-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
+$(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC) $(LZ4)
+	@echo "Building Kernel Image ($(KERNEL_IMAGE_NAME))"
+	$(call make-kernel-target,$(KERNEL_IMAGE_NAME))
 	$(hide) if grep -q '^CONFIG_OF=y' $(KERNEL_CONFIG); then \
 			echo "Building DTBs"; \
 			$(call make-kernel-target,dtbs); \
@@ -426,6 +440,10 @@ $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC)
 				($(call make-kernel-modules-target,$$vendor_boot_modules,$(KERNEL_VENDOR_RAMDISK_MODULES_OUT),/,$(KERNEL_VENDOR_RAMDISK_DEPMOD_STAGING_DIR),$(BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD))); \
 			) \
 		fi
+ifeq ($(BOARD_KERNEL_LZ4_COMPRESSION),true)
+	@echo "Compressing Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
+	$(hide) $(LZ4) $(BOARD_KERNEL_LZ4_COMP_FLAGS) $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_IMAGE_NAME) $@
+endif
 
 .PHONY: kerneltags
 kerneltags: $(KERNEL_CONFIG)
@@ -517,8 +535,10 @@ $(RECOVERY_KERNEL_CONFIG): $(ALL_RECOVERY_KERNEL_DEFCONFIG_SRCS)
 
 $(TARGET_PREBUILT_INT_RECOVERY_KERNEL): $(RECOVERY_KERNEL_CONFIG) $(DEPMOD) $(DTC)
 	@echo "Building Recovery Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
-	$(call make-recovery-kernel-target,$(BOARD_KERNEL_IMAGE_NAME))
-
+	$(call make-recovery-kernel-target,$(KERNEL_IMAGE_NAME))
+ifeq ($(strip $(BOARD_KERNEL_LZ4_COMPRESSION)),true)
+	$(hide) $(LZ4) $(BOARD_KERNEL_LZ4_COMP_FLAGS) $(RECOVERY_KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/$(KERNEL_IMAGE_NAME) $@
+endif
 
 endif
 
