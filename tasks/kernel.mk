@@ -77,7 +77,6 @@ KERNEL_DEFCONFIG := $(TARGET_KERNEL_CONFIG)
 RECOVERY_DEFCONFIG := $(TARGET_KERNEL_RECOVERY_CONFIG)
 VARIANT_DEFCONFIG := $(TARGET_KERNEL_VARIANT_CONFIG)
 SELINUX_DEFCONFIG := $(TARGET_KERNEL_SELINUX_CONFIG)
-KERNEL_DEFCONFIGS := VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(KERNEL_DEFCONFIG)
 
 ## Internal variables
 DTC := $(HOST_OUT_EXECUTABLES)/dtc
@@ -389,7 +388,7 @@ $(KERNEL_OUT):
 
 $(KERNEL_CONFIG): $(KERNEL_OUT) $(ALL_KERNEL_DEFCONFIG_SRCS)
 	@echo "Building Kernel Config"
-	$(call make-kernel-config,$(KERNEL_OUT),$(KERNEL_DEFCONFIGS))
+	$(call make-kernel-config,$(KERNEL_OUT),$(KERNEL_DEFCONFIG))
 
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_CONFIG) $(DEPMOD) $(DTC)
 	@echo "Building Kernel Image ($(BOARD_KERNEL_IMAGE_NAME))"
@@ -462,7 +461,7 @@ $(BOARD_PREBUILT_DTBOIMAGE): $(DTC) $(MKDTIMG) $(MKDTBOIMG) $(DTBO_OUT)
 $(BOARD_PREBUILT_DTBOIMAGE):
 	@echo "Building dtbo.img"
 	$(hide) find $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtbo" | xargs rm -f
-	$(call make-dtbo-target,$(KERNEL_DEFCONFIGS))
+	$(call make-kernel-config,$(DTBO_OUT),$(KERNEL_DEFCONFIG))
 	$(call make-dtbo-target,$(TARGET_KERNEL_DTB))
 ifeq ($(BOARD_KERNEL_SEPARATED_DTBO),true)
 ifdef BOARD_DTBO_CFG
@@ -495,7 +494,7 @@ DTBFILES ?= $(shell find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "
 $(INSTALLED_DTBIMAGE_TARGET): $(DTC) $(DTB_OUT)
 	@echo "Building dtb.img"
 	$(hide) find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | xargs rm -f
-	$(call make-dtb-target,$(KERNEL_DEFCONFIG))
+	$(call make-kernel-config,$(DTB_OUT),$(KERNEL_DEFCONFIG))
 	$(call make-dtb-target,$(TARGET_KERNEL_DTB))
 	cat $(DTBFILES) > $@
 	$(hide) touch -c $(DTB_OUT)
