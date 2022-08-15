@@ -446,16 +446,23 @@ ifeq (true,$(filter true, $(TARGET_NEEDS_DTBOIMAGE) $(BOARD_KERNEL_SEPARATED_DTB
 ifneq ($(BOARD_CUSTOM_DTBOIMG_MK),)
 include $(BOARD_CUSTOM_DTBOIMG_MK)
 else
-ifneq ($(BOARD_INCLUDED_DTBO),)
-$(foreach dtbo,$(BOARD_INCLUDED_DTBO), \
-	$(eval DTBOFILES += $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts/$(dtbo)))
-endif # BOARD_INCLUDED_DTBO
-DTBOFILES ?= $(shell find $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtbo" | sort)
 MKDTIMG := $(HOST_OUT_EXECUTABLES)/mkdtimg$(HOST_EXECUTABLE_SUFFIX)
 MKDTBOIMG := $(HOST_OUT_EXECUTABLES)/mkdtboimg.py$(HOST_EXECUTABLE_SUFFIX)
 
 $(DTBO_OUT):
 	mkdir -p $(DTBO_OUT)
+
+MKDTBOIMG_FLAGS :=
+ifneq ($(BOARD_KERNEL_PAGESIZE),)
+MKDTBOIMG_FLAGS += --page_size=$(BOARD_KERNEL_PAGESIZE)
+endif
+
+ifneq ($(TARGET_KERNEL_DTBO_FILES),)
+KERNEL_DTBO_FILES := 
+$(foreach dtbo,$(TARGET_KERNEL_DTBO_FILES), \
+	$(eval KERNEL_DTBO_FILES += $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts/$(dtbo)))
+endif # TARGET_KERNEL_DTBO_FILES
+KERNEL_DTBO_FILES ?= $(shell find $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtbo" | sort)
 
 $(BOARD_PREBUILT_DTBOIMAGE): $(DTC) $(MKDTIMG) $(MKDTBOIMG) $(DTBO_OUT)
 $(BOARD_PREBUILT_DTBOIMAGE):
@@ -467,11 +474,7 @@ ifeq ($(BOARD_KERNEL_SEPARATED_DTBO),true)
 ifdef BOARD_DTBO_CFG
 	$(MKDTBOIMG) cfg_create $@ $(BOARD_DTBO_CFG) -d $(DTBO_OUT)/arch/$(KERNEL_ARCH)/boot/dts
 else
-ifdef BOARD_KERNEL_PAGESIZE
-	$(MKDTBOIMG) create $@ --page_size=$(BOARD_KERNEL_PAGESIZE) $(DTBOFILES)
-else
-	$(MKDTBOIMG) create $@ $(DTBOFILES)
-endif # BOARD_KERNEL_PAGESIZE
+	$(MKDTBOIMG) create $@ $(MKDTBOIMG_FLAGS) $(KERNEL_DTBO_FILES)
 endif # BOARD_DTBO_CFG
 else
 	$(call make-dtbo-target,$(TARGET_KERNEL_DTBO))
@@ -485,18 +488,18 @@ ifeq ($(BOARD_PREBUILT_DTBIMAGE_DIR),)
 $(DTB_OUT):
 	mkdir -p $(DTB_OUT)
 
-ifneq ($(BOARD_INCLUDED_DTB),)
-$(foreach dtb,$(BOARD_INCLUDED_DTB), \
-	$(eval DTBFILES += $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts/$(dtb)))
-endif # BOARD_INCLUDED_DTB
-DTBFILES ?= $(shell find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | sort)
+ifneq ($(TARGET_KERNEL_DTB_FILES),)
+$(foreach dtb,$(TARGET_KERNEL_DTB_FILES), \
+	$(eval KERNEL_DTB_FILES += $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts/$(dtb)))
+endif # TARGET_KERNEL_DTB_FILES
+KERNEL_DTB_FILES ?= $(shell find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | sort)
 
 $(INSTALLED_DTBIMAGE_TARGET): $(DTC) $(DTB_OUT)
 	@echo "Building dtb.img"
 	$(hide) find $(DTB_OUT)/arch/$(KERNEL_ARCH)/boot/dts -type f -name "*.dtb" | xargs rm -f
 	$(call make-kernel-config,$(DTB_OUT),$(KERNEL_DEFCONFIG))
 	$(call make-dtb-target,$(TARGET_KERNEL_DTB))
-	cat $(DTBFILES) > $@
+	cat $(KERNEL_DTB_FILES) > $@
 	$(hide) touch -c $(DTB_OUT)
 endif # !BOARD_PREBUILT_DTBIMAGE_DIR
 endif # BOARD_INCLUDE_DTB_IN_BOOTIMG
