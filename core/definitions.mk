@@ -1,3 +1,0 @@
-#
-# Evervolv specific macros
-#

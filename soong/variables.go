@@ -6,12 +6,12 @@ import (
 	"android/soong/android"
 )
 
-func evervolvExpandVariables(ctx android.ModuleContext, in string) string {
-	evervolvVars := ctx.Config().VendorConfig("evervolvVarsPlugin")
+func kernelExpandVariables(ctx android.ModuleContext, in string) string {
+	kernelVariables := ctx.Config().VendorConfig("kernelVariablesPlugin")
 
 	out, err := android.Expand(in, func(name string) (string, error) {
-		if evervolvVars.IsSet(name) {
-			return evervolvVars.String(name), nil
+		if kernelVariables.IsSet(name) {
+			return kernelVariables.String(name), nil
 		}
 		// This variable is not for us, restore what the original
 		// variable string will have looked like for an Expand
